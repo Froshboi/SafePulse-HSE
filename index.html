@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SafePulse HSE | Safety Insights</title>
+<meta name="description" content="Turn HSE observation logs into clear safety insights with SafePulse HSE.">
+<meta name="theme-color" content="#0B3D2E">
+<style>
+:root{--bg:#0B3D2E;--bar:#145A3C;--ink:#fff;--mute:#BFE3D0;--neon:#39FF14;--panel:#fff;--text:#1c3a30;--line:#d4e4db;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#E4F1EA;--bar:#145A3C;--ink:#0B3D2E;--mute:#2F5D4C;--neon:#0B7A3E}}
+:root[data-theme="light"]{--bg:#E4F1EA;--ink:#0B3D2E;--mute:#2F5D4C;--neon:#0B7A3E}
+:root[data-theme="dark"]{--bg:#0B3D2E;--ink:#fff;--mute:#BFE3D0;--neon:#39FF14}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font:15px/1.45 "Trebuchet MS","Segoe UI",Arial,sans-serif;padding:20px 16px 40px}
+.wrap{max-width:1000px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:12px;margin:4px 0 6px}
+.brand-mark{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:var(--neon);color:#0B3D2E;font-size:15px;font-weight:900;letter-spacing:-1px}
+h1{font-size:28px;margin:0;letter-spacing:-.3px}
+.sub{color:var(--mute);margin:0 0 18px;max-width:60ch}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+button,.file{font:inherit;font-weight:700;border-radius:8px;padding:11px 16px;border:2px solid var(--neon);cursor:pointer}
+.file{background:var(--neon);color:#0B3D2E;display:inline-block}
+.file input{position:absolute;opacity:0;width:1px;height:1px}
+.file:focus-within,button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #F2C94C;outline-offset:2px}
+button{background:transparent;color:var(--ink)}
+button.on{background:var(--bar);color:#fff;border-color:var(--bar)}
+#msg{margin:14px 0;min-height:1.4em;color:var(--mute)}
+#msg.err{color:#FFB4A8;font-weight:700}
+.filters{margin:6px 0 16px}
+label{display:flex;flex-direction:column;font-size:12px;color:var(--mute);gap:3px}
+select,input[type=date]{font:inherit;padding:8px;border-radius:6px;border:1px solid var(--line);background:#fff;color:#1c3a30;min-width:130px}
+nav{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px}
+nav button{white-space:nowrap;padding:9px 14px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px;margin-bottom:14px}
+.tile{border-radius:8px;padding:10px 12px;color:#fff;min-height:84px;display:flex;flex-direction:column;justify-content:space-between}
+.tile span{font-size:12px;font-weight:700}
+.tile b{font-size:32px;line-height:1}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px}
+.card{background:var(--panel);color:var(--text);border-radius:10px;padding:14px}
+.card h3{margin:0 0 8px;font-size:15px}
+.box{position:relative;height:280px}
+.mid{position:absolute;left:0;right:0;bottom:22%;text-align:center;font-size:44px;font-weight:700;line-height:1}
+.mid small{display:block;font-size:12px;font-weight:400;color:#4a6b5c}
+.empty{background:var(--panel);color:var(--text);border-radius:10px;padding:16px;margin-top:10px}
+.empty code{background:#e8f2ec;padding:1px 5px;border-radius:4px}
+footer{margin-top:26px;padding-top:14px;border-top:1px solid color-mix(in srgb,var(--mute) 35%,transparent);color:var(--mute);font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div class="brand"><span class="brand-mark" aria-hidden="true">SP</span><h1>SafePulse HSE</h1></div>
+<p class="sub">Choose your observation log and your dashboards appear. The file is read inside this browser and is not uploaded anywhere.</p>
+</header>
+<div class="row">
+<label class="file">Choose Excel or CSV log<input type="file" id="file" accept=".xlsx,.xls,.csv"></label>
+<button id="demo" type="button">Try demo data</button>
+</div>
+<div id="msg" role="status"></div>
+<div id="help" class="empty">The first sheet needs a header row with columns named <code>Date</code>, <code>Reported Category</code>, <code>Project Location</code>, <code>Observation</code>, <code>State Condition</code>, <code>Potential Risk</code> and <code>Status</code>. State Condition values: Safe Act, Unsafe Act, Safe Condition, Unsafe Condition.</div>
+<main id="app" hidden>
+<div class="row filters">
+<label>Location<select id="fLoc"></select></label>
+<label>Reported category<select id="fCat"></select></label>
+<label>From<input type="date" id="fFrom"></label>
+<label>To<input type="date" id="fTo"></label>
+</div>
+<nav id="nav" aria-label="Dashboards"></nav>
+<div id="tiles" class="tiles"></div>
+<div id="cards" class="cards"></div>
+</main>
+<footer>Built by Trotskybuilds</footer>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const C={blue:'#2F80ED',green:'#27AE60',orange:'#F2994A',red:'#EB5757',purple:'#7F5CC7',teal:'#17A589',yellow:'#F2C94C',grey:'#B8C4BE'};
+const PAL=[C.blue,C.green,C.orange,C.red,C.purple,C.teal,C.yellow];
+const PPE=[['Gloves',/glove/i],['Safety glasses',/glass|goggle/i],['Ear plugs',/ear\s?plug|earplug/i],['Mask',/mask/i],['Face shield',/face\s?shield/i],['Helmet',/helmet|hard\s?hat/i]];
+const VIEWS=[['hse','HSE'],['h360','HSE 360'],['ppe','PPE'],['inc','Incidents and actions']];
+let rows=[],view='hse',charts=[];
+const pct=x=>Math.round(x*100)+'%';
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+function toDate(v){
+  if(v instanceof Date){const d=new Date(v.getTime()+432e5);return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+  if(typeof v==='number'){const d=new Date(Math.round((v-25569)*864e5));return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());}
+  if(typeof v==='string'){const m=v.trim().match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/);
+    if(m){let y=+m[3];if(y<100)y+=2000;return new Date(y,+m[2]-1,+m[1]);}
+    const d=new Date(v);if(!isNaN(d))return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+  return null;
+}
+function stateOf(s){
+  s=String(s).toLowerCase();
+  const u=s.includes('unsafe'),a=s.includes('act'),c=s.includes('cond');
+  if(!s.includes('safe'))return '';
+  return (u?'Unsafe ':'Safe ')+(c&&!a?'Condition':'Act');
+}
+function build(o){
+  const unsafe=o.st.startsWith('Unsafe');
+  return {d:o.d,cat:o.cat||'Not stated',loc:o.loc||'Not stated',obs:o.obs,st:o.st,risk:o.risk||'Not stated',status:o.status,
+    unsafe,closed:/closed/i.test(o.status)&&!/temp/i.test(o.status),ppe:unsafe&&PPE.some(p=>p[1].test(o.obs))};
+}
+function parseBook(buf){
+  const wb=XLSX.read(buf,{type:'array',cellDates:true});
+  for(const name of wb.SheetNames){
+    const a=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,defval:''});
+    const h=a.findIndex(r=>r.some(c=>/state/i.test(c))&&r.some(c=>/observation/i.test(c)));
+    if(h<0)continue;
+    const hd=a[h].map(String),ix=re=>hd.findIndex(c=>re.test(c));
+    const k={d:ix(/^date/i),cat:ix(/reported\s*categ/i),loc:ix(/location|site/i),obs:ix(/observation/i),st:ix(/state/i),risk:ix(/potential|risk\s*involved/i),status:ix(/^status/i)};
+    const g=(r,i)=>i<0?'':(r[i]===undefined?'':r[i]);
+    const out=a.slice(h+1).filter(r=>String(g(r,k.obs)).trim()).map(r=>build({
+      d:toDate(g(r,k.d)),cat:String(g(r,k.cat)).trim(),loc:String(g(r,k.loc)).trim(),obs:String(g(r,k.obs)),
+      st:stateOf(g(r,k.st)),risk:String(g(r,k.risk)).trim(),status:String(g(r,k.status)).trim()}));
+    if(out.length)return out;
+  }
+  return null;
+}
+function demo(){
+  const S=['Unsafe Condition','Unsafe Condition','Unsafe Act','Unsafe Act','Safe Act','Safe Act','Safe Condition'];
+  const R=['Procedures Not Followed','Procedures Not Followed','Line of Fire','Housekeeping','PPE','Positive Reinforcement'];
+  const T=['Fitter cutting without hand gloves and safety glasses','Hose not coiled','Welder without ear plug','Work area not cleaned','Helper in line of fire','Good housekeeping in workshop'];
+  const out=[];let seed=7;const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
+  for(let i=0;i<70;i++){
+    const st=S[Math.floor(rnd()*S.length)],t=Math.floor(rnd()*T.length);
+    out.push(build({d:new Date(2026,8,1+Math.floor(i/5)),cat:['Contractor','Company'][i%2],loc:['Fabrication yard','Main workshop'][i%3?0:1],
+      obs:T[t],st,risk:R[Math.floor(rnd()*R.length)],status:rnd()<.45?'Closed':(rnd()<.2?'Open':'')}));
+  }
+  return out;
+}
+function setRows(r,note){
+  rows=r;
+  const opts=(el,vals)=>{el.innerHTML='<option>All</option>'+[...new Set(vals)].sort().map(v=>`<option>${v}</option>`).join('')};
+  opts($('#fLoc'),rows.map(x=>x.loc));opts($('#fCat'),rows.map(x=>x.cat));
+  const ds=rows.map(x=>x.d).filter(Boolean).sort((a,b)=>a-b);
+  $('#fFrom').value=ds.length?ymd(ds[0]):'';$('#fTo').value=ds.length?ymd(ds[ds.length-1]):'';
+  $('#help').hidden=true;$('#app').hidden=false;
+  $('#msg').className='';$('#msg').textContent=note+' ('+rows.length+' observations)';
+  render();
+}
+function filtered(){
+  const l=$('#fLoc').value,c=$('#fCat').value,f=$('#fFrom').value,t=$('#fTo').value;
+  return rows.filter(r=>(l==='All'||r.loc===l)&&(c==='All'||r.cat===c)&&(!r.d||((!f||ymd(r.d)>=f)&&(!t||ymd(r.d)<=t))));
+}
+function count(arr,fn){const m={};arr.forEach(r=>{const k=fn(r);m[k]=(m[k]||0)+1});return m}
+function mk(id,type,labels,sets,opt={}){
+  const ch=new Chart($('#'+id),{type,data:{labels,datasets:sets},options:Object.assign({responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:sets.length>1||type==='doughnut',position:'bottom'}}},opt)});
+  charts.push(ch);
+}
+function render(){
+  charts.forEach(c=>c.destroy());charts=[];
+  $('#nav').innerHTML=VIEWS.map(v=>`<button type="button" class="${v[0]===view?'on':''}" data-v="${v[0]}">${v[1]}</button>`).join('');
+  const d=filtered(),n=d.length;
+  if(!n){$('#tiles').innerHTML='';$('#cards').innerHTML='<div class="empty">No observations match these filters. Widen the dates or reset the location and category.</div>';return}
+  const un=d.filter(r=>r.unsafe),sa=d.length-un.length,cl=un.filter(r=>r.closed).length;
+  const closure=un.length?cl/un.length:0,obsPct=sa/n,ppeNc=d.filter(r=>r.ppe).length,ppePct=(n-ppeNc)/n;
+  const noUpd=un.filter(r=>!r.status).length,open=un.length-cl;
+  const cnt=s=>d.filter(r=>r.st===s).length;
+  const tile=(l,v,c)=>`<div class="tile" style="background:${c}"><span>${l}</span><b>${v}</b></div>`;
+  const card=(t,id,extra='')=>`<div class="card"><h3>${t}</h3><div class="box"><canvas id="${id}"></canvas>${extra}</div></div>`;
+  const noAxis={scales:{y:{beginAtZero:true,ticks:{precision:0}}}};
+  if(view==='hse'){
+    $('#tiles').innerHTML=tile('Total observations',n,C.blue)+tile('Safe acts',cnt('Safe Act'),C.green)+tile('Unsafe acts',cnt('Unsafe Act'),C.orange)+tile('Unsafe conditions',cnt('Unsafe Condition'),C.red)+tile('Action closure rate',pct(closure),C.purple);
+    $('#cards').innerHTML=card('Daily observations, safe and unsafe','c1')+card('Observation types','c2');
+    const days=[...new Set(d.filter(r=>r.d).map(r=>ymd(r.d)))].sort();
+    const by=u=>days.map(k=>d.filter(r=>r.d&&ymd(r.d)===k&&r.unsafe===u).length);
+    mk('c1','bar',days.map(k=>k.slice(5)),[{label:'Safe',data:by(false),backgroundColor:C.green},{label:'Unsafe',data:by(true),backgroundColor:C.red}],
+      {scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,ticks:{precision:0}}}});
+    const rc=count(d,r=>r.risk);mk('c2','doughnut',Object.keys(rc),[{data:Object.values(rc),backgroundColor:PAL}],{cutout:'58%'});
+  }else if(view==='h360'){
+    const score=(obsPct+closure+ppePct)/3;
+    $('#tiles').innerHTML=tile('Observations',n,C.blue)+tile('Open actions',open,C.orange)+tile('PPE compliance',pct(ppePct),C.green)+tile('Action closure rate',pct(closure),C.purple)+tile('Safe observations',pct(obsPct),C.teal);
+    $('#cards').innerHTML=card('HSE 360 score','c1',`<div class="mid">${pct(score)}<small>average of the three rates</small></div>`)+card('Rate by area','c2');
+    mk('c1','doughnut',['Score','Gap'],[{data:[score,1-score],backgroundColor:[C.green,'#e3ece7'],borderWidth:0}],{circumference:180,rotation:270,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}}});
+    mk('c2','bar',['Safe observations','Action closure','PPE compliance'],[{data:[obsPct*100,closure*100,ppePct*100],backgroundColor:[C.teal,C.purple,C.green]}],
+      {indexAxis:'y',scales:{x:{min:0,max:100,ticks:{callback:v=>v+'%'}}}});
+  }else if(view==='ppe'){
+    $('#tiles').innerHTML=tile('Observations checked',n,C.blue)+tile('Compliant',n-ppeNc,C.green)+tile('Non-compliant',ppeNc,C.red)+tile('Compliance',pct(ppePct),C.purple);
+    $('#cards').innerHTML=card('Non-compliance by PPE type','c1')+card('PPE compliance','c2');
+    const t=PPE.map(p=>un.filter(r=>p[1].test(r.obs)).length);
+    mk('c1','bar',PPE.map(p=>p[0]),[{data:t,backgroundColor:C.red}],Object.assign({},noAxis));
+    mk('c2','doughnut',['Compliant','Non-compliant'],[{data:[n-ppeNc,ppeNc],backgroundColor:[C.green,C.red]}],{cutout:'58%'});
+  }else{
+    $('#tiles').innerHTML=tile('Unsafe reports',un.length,C.red)+tile('Positive observations',sa,C.green)+tile('Open actions',open,C.orange)+tile('Closed actions',cl,C.blue)+tile('Status not updated',noUpd,C.purple);
+    $('#cards').innerHTML=card('Root cause and risk category','c1')+card('Action status on unsafe reports','c2');
+    const rc=count(un,r=>r.risk),keys=Object.keys(rc).sort((a,b)=>rc[b]-rc[a]);
+    mk('c1','bar',keys,[{data:keys.map(k=>rc[k]),backgroundColor:C.orange}],{indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{precision:0}}}});
+    mk('c2','doughnut',['Closed','Open','Not updated'],[{data:[cl,un.filter(r=>!r.closed&&r.status).length,noUpd],backgroundColor:[C.green,C.orange,C.grey]}],{cutout:'58%'});
+  }
+}
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b){view=b.dataset.v;render()}});
+['fLoc','fCat','fFrom','fTo'].forEach(i=>$('#'+i).addEventListener('change',render));
+$('#demo').addEventListener('click',()=>setRows(demo(),'Showing demo data'));
+$('#file').addEventListener('change',async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const r=parseBook(await f.arrayBuffer());
+    if(!r){$('#msg').className='err';$('#msg').textContent='No observation table found. Check the column names listed below.';return}
+    setRows(r,f.name);
+  }catch(err){$('#msg').className='err';$('#msg').textContent='That file could not be read. Try saving it again as .xlsx or .csv.'}
+});
+</script>
+</body>
+</html>
